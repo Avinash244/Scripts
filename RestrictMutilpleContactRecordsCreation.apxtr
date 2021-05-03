@@ -1,0 +1,16 @@
+trigger RestrictMutilpleContactRecordsCreation on Contact (after insert,after update) 
+{
+    Set<Id> accIds=new Set<Id>();
+    for(Contact con:trigger.new){
+        if(con.AccountId!=null){
+            accIds.add(con.AccountId);
+        }
+    }
+    Set<Id> accountIds=new Map<Id, AggregateResult>([select AccountId Id from Contact where AccountId=:accIds  group by  AccountId having count(Id) >= 2] ).keySet();
+    
+    for(Contact con:trigger.new){
+        if(accountIds.contains(con.AccountId)){
+            con.AccountId.addError('Your account is alreday having contact');
+        }
+    }
+}
